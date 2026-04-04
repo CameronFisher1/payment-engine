@@ -1,44 +1,18 @@
-use crate::domain::transaction::Transaction;
 use crate::engine::payment_engine::PaymentEngine;
+use crate::error::app_error::AppError;
+use crate::io::csv_input::CsvTransactionSource;
 use crate::ledger::in_memory::InMemoryLedger;
-use crate::traits::ledger::Ledger;
+use crate::traits::transaction_source::TransactionSource;
 use std::io::{Read, Write};
 
-pub fn run<R: Read, W: Write>(input: R, output: W) {
+pub fn run<R: Read, W: Write>(input: R, _output: W) -> Result<(), AppError> {
+    let mut source: CsvTransactionSource<R> = CsvTransactionSource::new(input);
     let mut ledger: InMemoryLedger = InMemoryLedger::new();
     let mut engine: PaymentEngine = PaymentEngine::new();
 
-    let sample = Transaction::Deposit {
-        client_id: 2,
-        tx_id: 1,
-        amount: 3,
-    };
+    while let Some(tx) = source.next_transaction()? {
+        let _ = engine.apply(tx, &mut ledger);
+    }
 
-    engine.apply(sample, &mut ledger);
-
-    println!("{}", ledger.account(2).unwrap().available);
-    let sample = Transaction::Withdrawal {
-        client_id: 2,
-        tx_id: 2,
-        amount: 2,
-    };
-    engine.apply(sample, &mut ledger);
-
-    println!("{}", ledger.account(2).unwrap().available);
-
-    let sample = Transaction::Dispute {
-        client_id: 2,
-        tx_id: 1,
-    };
-    engine.apply(sample, &mut ledger);
-
-    println!("{}", ledger.account(2).unwrap().available);
-
-    let sample = Transaction::Chargeback {
-        client_id: 2,
-        tx_id: 1,
-    };
-    engine.apply(sample, &mut ledger);
-
-    println!("{}", ledger.account(2).unwrap().available);
+    Ok(())
 }
