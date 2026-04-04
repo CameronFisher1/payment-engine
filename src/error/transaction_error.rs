@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq, Eq)]
 pub enum TransactionError {
     InvalidInput,
     InvalidFunds,
