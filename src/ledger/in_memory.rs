@@ -1,4 +1,4 @@
-use crate::domain::account::Account;
+use crate::domain::account::{Account, AccountSnapshot};
 use crate::domain::client::ClientId;
 use crate::domain::recorded_transaction::RecordedTransaction;
 use crate::domain::transaction_id::TxId;
@@ -48,5 +48,9 @@ impl Ledger for InMemoryLedger {
         }
         self.transactions.insert(tx.tx_id(), tx);
         Ok(())
+    }
+
+    fn snapshot_accounts(&self) -> Vec<AccountSnapshot> {
+        self.accounts.values().map(AccountSnapshot::from).collect()
     }
 }

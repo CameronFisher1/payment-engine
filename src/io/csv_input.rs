@@ -68,7 +68,7 @@ fn convert_amount(amount: Option<String>) -> Amount {
     }
 }
 
-// This function was created using AI
+// This entire function was created using AI
 fn parse_amount_4dp(s: &str) -> Result<Amount, String> {
     let s = s.trim();
     let (sign, body) = if let Some(rest) = s.strip_prefix('-') {
