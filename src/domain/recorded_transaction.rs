@@ -5,9 +5,15 @@ use crate::domain::transaction::Transaction;
 use crate::domain::transaction_id::TxId;
 
 pub struct RecordedTransaction {
-    tx_id: TxId,
-    client_id: ClientId,
-    amount: Amount,
-    kind: Transaction,
-    dispute_state: DisputeState
+    pub tx_id: TxId,
+    pub client_id: ClientId,
+    pub amount: Amount,
+    pub kind: Transaction, // Technically, this value can only be deposit or withdrawal
+    pub dispute_state: DisputeState,
+}
+
+impl RecordedTransaction {
+    pub fn tx_id(&self) -> TxId {
+        self.tx_id
+    }
 }

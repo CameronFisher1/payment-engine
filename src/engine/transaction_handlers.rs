@@ -1,0 +1,183 @@
+use crate::domain::dispute::DisputeState;
+use crate::domain::recorded_transaction::RecordedTransaction;
+use crate::domain::transaction::Transaction;
+use crate::error::transaction_error::TransactionError;
+use crate::ledger::in_memory::InMemoryLedger;
+use crate::traits::ledger::Ledger;
+
+pub fn handle_deposit(
+    tx: Transaction,
+    ledger: &mut InMemoryLedger,
+) -> Result<(), TransactionError> {
+    // Get account
+    let account = ledger.account_mut_or_create(tx.client_id());
+
+    // Check if account is locked
+    if account.locked {
+        return Err(TransactionError::AccountLocked);
+    }
+
+    // Deposit money into account
+    let amount = tx.amount().ok_or(TransactionError::InvalidInput)?;
+    account.available = account
+        .available
+        .checked_add(amount)
+        .ok_or(TransactionError::InvalidInput)?;
+
+    // Add transaction to RecordTransaction map
+    ledger
+        .insert_recorded_tx(RecordedTransaction {
+            tx_id: tx.tx_id(),
+            client_id: tx.client_id(),
+            amount,
+            kind: tx,
+            dispute_state: DisputeState::NotDisputed,
+        })
+        .map_err(|_| TransactionError::LedgerError)?;
+
+    Ok(())
+}
+
+pub fn handle_withdraw(
+    tx: Transaction,
+    ledger: &mut InMemoryLedger,
+) -> Result<(), TransactionError> {
+    // Get account
+    let account = ledger.account_mut_or_create(tx.client_id());
+
+    // Check if account is locked
+    if account.locked {
+        return Err(TransactionError::AccountLocked);
+    }
+
+    // Check account balance
+    let amount = tx.amount().ok_or(TransactionError::InvalidInput)?;
+    if account.available < amount {
+        return Err(TransactionError::InvalidFunds);
+    }
+
+    // Subtract amount from account
+    account.available = account
+        .available
+        .checked_sub(amount)
+        .ok_or(TransactionError::InvalidInput)?;
+
+    // Add transaction to RecordTransaction map
+    ledger
+        .insert_recorded_tx(RecordedTransaction {
+            tx_id: tx.tx_id(),
+            client_id: tx.client_id(),
+            amount,
+            kind: tx,
+            dispute_state: DisputeState::NotDisputed,
+        })
+        .map_err(|_| TransactionError::LedgerError)?;
+
+    Ok(())
+}
+
+pub fn handle_dispute(
+    tx: Transaction,
+    ledger: &mut InMemoryLedger,
+) -> Result<(), TransactionError> {
+    // Read and validate referenced transaction without holding a mutable borrow.
+    let disputed_amount = {
+        let transaction = ledger
+            .recorded_tx(tx.tx_id())
+            .ok_or(TransactionError::TransactionNotFound)?;
+        if transaction.dispute_state != DisputeState::NotDisputed {
+            return Err(TransactionError::DisputeError);
+        }
+        transaction.amount
+    };
+
+    // Get users account
+    let account = ledger.account_mut_or_create(tx.client_id()); // account should already exist
+
+    // Move funds from available to held.
+    account.available = account
+        .available
+        .checked_sub(disputed_amount)
+        .ok_or(TransactionError::InvalidInput)?;
+    account.held = account
+        .held
+        .checked_add(disputed_amount)
+        .ok_or(TransactionError::InvalidInput)?;
+
+    // Mark transaction as disputed.
+    let transaction = ledger
+        .recorded_tx_mut(tx.tx_id())
+        .ok_or(TransactionError::TransactionNotFound)?;
+    transaction.dispute_state = DisputeState::Disputed;
+
+    Ok(())
+}
+
+pub fn handle_resolve(
+    tx: Transaction,
+    ledger: &mut InMemoryLedger,
+) -> Result<(), TransactionError> {
+    let disputed_amount = {
+        let transaction = ledger
+            .recorded_tx(tx.tx_id())
+            .ok_or(TransactionError::TransactionNotFound)?;
+        if transaction.dispute_state != DisputeState::Disputed {
+            return Err(TransactionError::DisputeError);
+        }
+        transaction.amount
+    };
+
+    // Get users account
+    let account = ledger.account_mut_or_create(tx.client_id()); // account should already exist
+
+    // Move funds from available to held.
+    account.available = account
+        .available
+        .checked_add(disputed_amount)
+        .ok_or(TransactionError::InvalidInput)?;
+    account.held = account
+        .held
+        .checked_sub(disputed_amount)
+        .ok_or(TransactionError::InvalidInput)?;
+
+    // Mark transaction as not disputed
+    let transaction = ledger
+        .recorded_tx_mut(tx.tx_id())
+        .ok_or(TransactionError::TransactionNotFound)?;
+    transaction.dispute_state = DisputeState::NotDisputed;
+
+    Ok(())
+}
+
+pub fn handle_chargeback(
+    tx: Transaction,
+    ledger: &mut InMemoryLedger,
+) -> Result<(), TransactionError> {
+    let disputed_amount = {
+        let transaction = ledger
+            .recorded_tx(tx.tx_id())
+            .ok_or(TransactionError::TransactionNotFound)?;
+        if transaction.dispute_state != DisputeState::Disputed {
+            return Err(TransactionError::DisputeError);
+        }
+        transaction.amount
+    };
+
+    // Get users account
+    let account = ledger.account_mut_or_create(tx.client_id()); // account should already exist
+
+    // Remove funds from accounts held balance and lock account
+    account.held = account
+        .held
+        .checked_sub(disputed_amount)
+        .ok_or(TransactionError::InvalidInput)?;
+    account.locked = true;
+
+    // Mark transaction as not disputed
+    let transaction = ledger
+        .recorded_tx_mut(tx.tx_id())
+        .ok_or(TransactionError::TransactionNotFound)?;
+    transaction.dispute_state = DisputeState::ChargedBack;
+
+    Ok(())
+}
