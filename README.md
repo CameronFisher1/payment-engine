@@ -214,16 +214,65 @@ The focus was on writing code that is easy to review and easy to extend later.
 
 ## AI Usage
 
-AI was used as a development tool during this project.
+Generative AI tools were used during development as an assistant for brainstorming, drafting, and reviewing ideas. This included help from ChatGPT on a few specific parts of the project.
 
-It helped with:
-- initial design and architecture planning
-- some business logic implementation ideas
-- CSV reader setup and usage
-- test planning and some test creation
-- documentation creation
+### Where AI was used
 
-All final code decisions, structure, and validation were reviewed and adjusted manually to make sure the implementation matched the project requirements.
+AI was mainly used for:
+
+- **Initial design discussion**
+  - high-level architecture ideas
+  - how to structure the project for readability and extensibility
+  - how to separate concerns between domain logic, engine logic, ledger/state, and CSV I/O
+
+- **Business logic discussion**
+  - clarifying how to think about transaction flows such as deposits, withdrawals, disputes, resolves, and chargebacks
+  - talking through edge cases and invalid operations
+  - discussing how account locking should affect future transactions
+
+- **CSV parsing / writing**
+  - understanding how to use Rust’s `csv` crate cleanly
+  - discussing how to read the input file, deserialize records, and write output records
+  - talking through how to keep CSV concerns separate from domain logic
+
+- **Testing**
+  - brainstorming a unit and integration test plan
+  - identifying important edge cases to cover
+  - helping draft test case organization
+
+- **Documentation**
+  - refining the README, assumptions, and test plan
+  - improving how design decisions and tradeoffs were explained
+
+### Type of prompts used
+
+The prompts I used were focused on guidance and reasoning rather than asking AI to generate a full solution. Examples include:
+
+- how to structure a Rust payment engine project
+- how to model dispute / resolve / chargeback flows
+- how to use the `csv` crate for streaming input/output
+- debugging help when tracing issues in transaction handling or CSV parsing
+- clarifying edge cases and expected system behavior
+
+The goal of these prompts was to explore approaches, validate understanding, and unblock specific issues rather than outsource implementation.
+
+### How I used the output
+
+I did not treat AI output as automatically correct.
+
+For each area where AI was used, I reviewed the suggestions carefully, compared them against the project requirements, and then decided what to keep, what to change, and what not to use. In practice, this meant:
+
+- checking suggested designs against the actual assessment requirements
+- simplifying ideas that were too complex for the scope of the project
+- adjusting code structure to match the final implementation I wanted
+- validating behavior through manual testing and planned automated tests
+- making final decisions myself about business rules, error handling, and maintainability tradeoffs
+
+### Final ownership
+
+I take ownership of the final implementation and the technical decisions in this repository.
+
+AI was used as a support tool to help think through design options, edge cases, test coverage, and documentation, but I thoroughly reviewed the suggestions, made my own implementation choices, and ensured the final solution matched the requirements and behavior I intended.
 
 ---
 
