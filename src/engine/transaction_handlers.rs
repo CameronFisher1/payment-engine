@@ -13,6 +13,12 @@ pub fn handle_deposit(
     // Check if transaction already exists
     ensure_transaction_is_new(tx.tx_id(), ledger)?;
 
+    // Get amount and verify it's not negative
+    let amount = tx.amount().ok_or(TransactionError::InvalidInput)?;
+    if amount < 0 {
+        return Err(TransactionError::InvalidInput);
+    }
+
     // Get account
     let account = ledger.account_mut_or_create(tx.client_id());
 
@@ -22,7 +28,6 @@ pub fn handle_deposit(
     }
 
     // Deposit money into account
-    let amount = tx.amount().ok_or(TransactionError::InvalidInput)?;
     account.available = account
         .available
         .checked_add(amount)
@@ -49,6 +54,12 @@ pub fn handle_withdraw(
     // Check if transaction already exists
     ensure_transaction_is_new(tx.tx_id(), ledger)?;
 
+    // Get amount and verify it's not negative
+    let amount = tx.amount().ok_or(TransactionError::InvalidInput)?;
+    if amount < 0 {
+        return Err(TransactionError::InvalidInput);
+    }
+
     // Get account
     let account = ledger.account_mut_or_create(tx.client_id());
 
@@ -58,7 +69,6 @@ pub fn handle_withdraw(
     }
 
     // Check account balance
-    let amount = tx.amount().ok_or(TransactionError::InvalidInput)?;
     if account.available < amount {
         return Err(TransactionError::InvalidFunds);
     }

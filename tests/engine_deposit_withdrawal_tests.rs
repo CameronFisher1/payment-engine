@@ -171,3 +171,29 @@ fn locked_account_ignores_deposit_and_withdrawal() {
     ));
     assert_account(&ledger, 1, 0, 0, true);
 }
+
+#[test]
+fn negative_deposit_returns_error_and_does_not_mutate_balance() {
+    let mut engine = PaymentEngine::new();
+    let mut ledger = InMemoryLedger::new();
+    engine.apply(deposit(1, 1, 10_000), &mut ledger).unwrap();
+
+    let result = engine.apply(deposit(1, 2, -1_000), &mut ledger);
+
+    assert!(matches!(result, Err(TransactionError::InvalidInput)));
+    assert_account(&ledger, 1, 10_000, 0, false);
+    assert!(ledger.recorded_tx(2).is_none());
+}
+
+#[test]
+fn negative_withdrawal_returns_error_and_does_not_mutate_balance() {
+    let mut engine = PaymentEngine::new();
+    let mut ledger = InMemoryLedger::new();
+    engine.apply(deposit(1, 1, 10_000), &mut ledger).unwrap();
+
+    let result = engine.apply(withdrawal(1, 2, -1_000), &mut ledger);
+
+    assert!(matches!(result, Err(TransactionError::InvalidInput)));
+    assert_account(&ledger, 1, 10_000, 0, false);
+    assert!(ledger.recorded_tx(2).is_none());
+}

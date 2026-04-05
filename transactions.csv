@@ -14,6 +14,7 @@ deposit,64,64,64
 dispute,64,               64,
 deposit, 3, 6, 7
 deposit, 10, 60,
+deposit,11,11,-7777
 dispute, 3, 6,
 resolve, 3, 6,
 withdrawal, 19, 19, 26999
@@ -25,6 +26,7 @@ dispute, 4, 7,
 chargeback, 4, 7,
 dispute, 4, 7,
 deposit, 4, 9, 4
+deposit, 0,0,0
 
 deposit,24,24,24
 chargeback,24,24,
@@ -33,3 +35,4 @@ chargeback,24,24,
 deposit,24,24,10
 
 chargeback,1,1,
+deposit,1,1,7777

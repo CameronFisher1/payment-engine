@@ -7,6 +7,7 @@ This document displays some assumptions I am making in this project
 - Account balances can go into the negatives when dispute/chargeback occurs with not enough funds.
 - CSV input file is placed in root directory of this repository
 - If a deposit/withdrawal doesn't have an amount associated to it. We will treat it as a $0 transaction
+- $0 transaction are allowed to go through
 
 ### Questions TBD
 - How does disputing a withdrawal work?

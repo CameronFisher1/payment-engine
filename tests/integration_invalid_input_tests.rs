@@ -30,6 +30,20 @@ fn duplicate_withdrawal_tx_id_does_not_mutate_balances() {
 }
 
 #[test]
+fn negative_deposit_is_ignored() {
+    let output = run_app(&csv("deposit,1,1,1.0\ndeposit,1,2,-1.0\n"));
+
+    assert_eq!(data_rows(&output), vec!["1,1,0,1,false".to_string()]);
+}
+
+#[test]
+fn negative_withdrawal_is_ignored() {
+    let output = run_app(&csv("deposit,1,1,1.0\nwithdrawal,1,2,-0.5\n"));
+
+    assert_eq!(data_rows(&output), vec!["1,1,0,1,false".to_string()]);
+}
+
+#[test]
 fn dispute_unknown_tx_ignored() {
     let output = run_app(&csv("deposit,1,1,1.0\ndispute,1,999,\n"));
 
@@ -52,13 +66,13 @@ fn chargeback_unknown_tx_ignored() {
 
 #[test]
 fn cross_client_dispute_can_mutate_wrong_account_in_current_implementation() {
-    let output = run_app(&csv("deposit,1,1,-214748.3648\ndeposit,2,2,0\ndispute,2,1,\n"));
+    let output = run_app(&csv("deposit,1,1,5.0\ndeposit,2,2,10.0\ndispute,2,1,\n"));
 
     assert_eq!(
         sorted_data_rows(&output),
         vec![
-            "1,-214748.3648,0,-214748.3648,false".to_string(),
-            "2,214748.3648,-214748.3648,0,false".to_string()
+            "1,5,0,5,false".to_string(),
+            "2,5,5,10,false".to_string()
         ]
     );
 }
@@ -66,28 +80,29 @@ fn cross_client_dispute_can_mutate_wrong_account_in_current_implementation() {
 #[test]
 fn cross_client_resolve_can_mutate_wrong_account_in_current_implementation() {
     let output = run_app(&csv(
-        "deposit,1,1,-214748.3648\ndispute,1,1,\ndeposit,2,2,-214748.3648\nresolve,2,1,\n",
+        "deposit,1,1,5.0\ndeposit,2,2,10.0\ndispute,1,1,\ndispute,2,2,\nresolve,2,1,\n",
     ));
 
     assert_eq!(
         sorted_data_rows(&output),
         vec![
-            "1,0,-214748.3648,-214748.3648,false".to_string(),
-            "2,-429496.7296,214748.3648,-214748.3648,false".to_string()
+            "1,0,5,5,false".to_string(),
+            "2,5,5,10,false".to_string()
         ]
     );
 }
 
 #[test]
 fn cross_client_chargeback_can_mutate_wrong_account_in_current_implementation() {
-    let output =
-        run_app(&csv("deposit,1,1,-214748.3648\ndispute,1,1,\ndeposit,2,2,0\nchargeback,2,1,\n"));
+    let output = run_app(&csv(
+        "deposit,1,1,5.0\ndeposit,2,2,10.0\ndispute,1,1,\ndispute,2,2,\nchargeback,2,1,\n",
+    ));
 
     assert_eq!(
         sorted_data_rows(&output),
         vec![
-            "1,0,-214748.3648,-214748.3648,false".to_string(),
-            "2,0,214748.3648,214748.3648,true".to_string()
+            "1,0,5,5,false".to_string(),
+            "2,0,5,5,true".to_string()
         ]
     );
 }
