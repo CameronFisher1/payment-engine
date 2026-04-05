@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use payment_engine::app::runner;
+use payment_engine::domain::amount::Amount;
 use std::io::Cursor;
 
 pub const OUTPUT_HEADER: &str = "client,available,held,total,locked";
@@ -42,7 +43,7 @@ pub fn csv_fields(row: &str) -> Vec<&str> {
     row.split(',').collect()
 }
 
-pub fn parse_output_amount(raw: &str) -> i32 {
+pub fn parse_output_amount(raw: &str) -> Amount {
     let raw = raw.trim();
     let (sign, body) = if let Some(rest) = raw.strip_prefix('-') {
         (-1_i64, rest)
@@ -71,6 +72,5 @@ pub fn parse_output_amount(raw: &str) -> i32 {
         .parse::<i64>()
         .unwrap_or_else(|_| panic!("invalid amount fractional part: {}", raw));
 
-    i32::try_from(sign * (whole * 10_000 + fractional))
-        .unwrap_or_else(|_| panic!("amount out of i32 range: {}", raw))
+    sign * (whole * 10_000 + fractional)
 }

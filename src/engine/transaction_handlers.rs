@@ -1,6 +1,7 @@
 use crate::domain::dispute::DisputeState;
 use crate::domain::recorded_transaction::RecordedTransaction;
 use crate::domain::transaction::Transaction;
+use crate::engine::helpers::{ensure_transaction_is_new, get_transaction_or_not_found};
 use crate::error::transaction_error::TransactionError;
 use crate::ledger::in_memory::InMemoryLedger;
 use crate::traits::ledger::Ledger;
@@ -9,6 +10,9 @@ pub fn handle_deposit(
     tx: Transaction,
     ledger: &mut InMemoryLedger,
 ) -> Result<(), TransactionError> {
+    // Check if transaction already exists
+    ensure_transaction_is_new(tx.tx_id(), ledger)?;
+
     // Get account
     let account = ledger.account_mut_or_create(tx.client_id());
 
@@ -42,6 +46,9 @@ pub fn handle_withdraw(
     tx: Transaction,
     ledger: &mut InMemoryLedger,
 ) -> Result<(), TransactionError> {
+    // Check if transaction already exists
+    ensure_transaction_is_new(tx.tx_id(), ledger)?;
+
     // Get account
     let account = ledger.account_mut_or_create(tx.client_id());
 
@@ -82,9 +89,7 @@ pub fn handle_dispute(
 ) -> Result<(), TransactionError> {
     // Read and validate referenced transaction without holding a mutable borrow.
     let disputed_amount = {
-        let transaction = ledger
-            .recorded_tx(tx.tx_id())
-            .ok_or(TransactionError::TransactionNotFound)?;
+        let transaction = get_transaction_or_not_found(tx.tx_id(), ledger)?;
         if transaction.dispute_state != DisputeState::NotDisputed {
             return Err(TransactionError::DisputeError);
         }
@@ -117,10 +122,9 @@ pub fn handle_resolve(
     tx: Transaction,
     ledger: &mut InMemoryLedger,
 ) -> Result<(), TransactionError> {
+    // Read and validate referenced transaction without holding a mutable borrow.
     let disputed_amount = {
-        let transaction = ledger
-            .recorded_tx(tx.tx_id())
-            .ok_or(TransactionError::TransactionNotFound)?;
+        let transaction = get_transaction_or_not_found(tx.tx_id(), ledger)?;
         if transaction.dispute_state != DisputeState::Disputed {
             return Err(TransactionError::DisputeError);
         }
@@ -153,10 +157,9 @@ pub fn handle_chargeback(
     tx: Transaction,
     ledger: &mut InMemoryLedger,
 ) -> Result<(), TransactionError> {
+    // Read and validate referenced transaction without holding a mutable borrow.
     let disputed_amount = {
-        let transaction = ledger
-            .recorded_tx(tx.tx_id())
-            .ok_or(TransactionError::TransactionNotFound)?;
+        let transaction = get_transaction_or_not_found(tx.tx_id(), ledger)?;
         if transaction.dispute_state != DisputeState::Disputed {
             return Err(TransactionError::DisputeError);
         }

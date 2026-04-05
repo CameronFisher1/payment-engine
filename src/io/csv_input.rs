@@ -99,5 +99,5 @@ fn parse_amount_4dp(s: &str) -> Result<Amount, String> {
         .checked_mul(whole.checked_mul(10_000).ok_or("overflow")? + frac)
         .ok_or("overflow")?;
 
-    i32::try_from(scaled).map_err(|_| "out of i32 range".into())
+    i64::try_from(scaled).map_err(|_| "out of i32 range".into())
 }

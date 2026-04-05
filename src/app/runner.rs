@@ -15,8 +15,14 @@ pub fn run<R: Read, W: Write>(input: R, output: W) -> Result<(), AppError> {
     let mut ledger: InMemoryLedger = InMemoryLedger::new();
     let mut engine: PaymentEngine = PaymentEngine::new();
 
-    while let Some(tx) = source.next_transaction()? {
-        let _ = engine.apply(tx, &mut ledger);
+    loop {
+        match source.next_transaction() {
+            Ok(Some(tx)) => {
+                let _ = engine.apply(tx, &mut ledger);
+            }
+            Ok(None) => break,
+            Err(_) => continue,
+        }
     }
 
     let snapshot: Vec<AccountSnapshot> = ledger.snapshot_accounts();

@@ -1,11 +1,12 @@
 mod common;
 
 use common::builders::{account_snapshot, csv_record};
+use payment_engine::domain::amount::Amount;
 use payment_engine::domain::transaction::Transaction;
 use payment_engine::io::csv_output::CsvReportSink;
 use payment_engine::traits::report_sink::ReportSink;
 
-fn parsed_deposit_amount(raw_amount: Option<&str>) -> i32 {
+fn parsed_deposit_amount(raw_amount: Option<&str>) -> Amount {
     let tx = Transaction::try_from(csv_record("deposit", 1, 1, raw_amount)).unwrap();
     match tx {
         Transaction::Deposit { amount, .. } => amount,
@@ -13,7 +14,7 @@ fn parsed_deposit_amount(raw_amount: Option<&str>) -> i32 {
     }
 }
 
-fn formatted_available_value(amount: i32) -> String {
+fn formatted_available_value(amount: Amount) -> String {
     let mut output = Vec::new();
     {
         let mut sink = CsvReportSink::new(&mut output);
@@ -80,16 +81,16 @@ fn negative_amount_is_allowed_in_current_implementation() {
 
 #[test]
 fn add_amounts_correctly() {
-    assert_eq!(10_000_i32 + 5_000_i32, 15_000_i32);
+    assert_eq!(10_000_i64 + 5_000_i64, 15_000_i64);
 }
 
 #[test]
 fn subtract_amounts_correctly() {
-    assert_eq!(10_000_i32 - 5_000_i32, 5_000_i32);
+    assert_eq!(10_000_i64 - 5_000_i64, 5_000_i64);
 }
 
 #[test]
 fn checked_add_and_subtract_handle_overflow_underflow() {
-    assert!(i32::MAX.checked_add(1).is_none());
-    assert!(i32::MIN.checked_sub(1).is_none());
+    assert!(i64::MAX.checked_add(1).is_none());
+    assert!(i64::MIN.checked_sub(1).is_none());
 }

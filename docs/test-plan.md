@@ -84,7 +84,7 @@ CSV → parsing → engine → output
 
 ### Invalid Cases
 - insufficient withdrawals are ignored
-- duplicate transactions handled correctly
+- duplicate transaction ids do not mutate output balances
 - invalid references are ignored
 
 ### Output Format

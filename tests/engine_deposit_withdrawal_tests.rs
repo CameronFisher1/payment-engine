@@ -113,25 +113,44 @@ fn failed_withdrawal_leaves_state_unchanged() {
 }
 
 #[test]
-fn duplicate_tx_id_returns_ledger_error() {
+fn duplicate_deposit_tx_id_returns_duplicate_transaction_error() {
     let mut engine = PaymentEngine::new();
     let mut ledger = InMemoryLedger::new();
     engine.apply(deposit(1, 1, 10_000), &mut ledger).unwrap();
 
     let result = engine.apply(deposit(1, 1, 2_000), &mut ledger);
 
-    assert!(matches!(result, Err(TransactionError::LedgerError)));
+    assert!(matches!(
+        result,
+        Err(TransactionError::DuplicateTransaction)
+    ));
 }
 
 #[test]
-fn duplicate_deposit_tx_id_still_mutates_balance_in_current_implementation() {
+fn duplicate_deposit_tx_id_does_not_mutate_balance() {
     let mut engine = PaymentEngine::new();
     let mut ledger = InMemoryLedger::new();
     engine.apply(deposit(1, 1, 10_000), &mut ledger).unwrap();
 
     let _ = engine.apply(deposit(1, 1, 2_000), &mut ledger);
 
-    assert_account(&ledger, 1, 12_000, 0, false);
+    assert_account(&ledger, 1, 10_000, 0, false);
+}
+
+#[test]
+fn duplicate_withdrawal_tx_id_returns_error_and_does_not_mutate_balance() {
+    let mut engine = PaymentEngine::new();
+    let mut ledger = InMemoryLedger::new();
+    engine.apply(deposit(1, 1, 10_000), &mut ledger).unwrap();
+    engine.apply(withdrawal(1, 2, 4_000), &mut ledger).unwrap();
+
+    let result = engine.apply(withdrawal(1, 2, 1_000), &mut ledger);
+
+    assert!(matches!(
+        result,
+        Err(TransactionError::DuplicateTransaction)
+    ));
+    assert_account(&ledger, 1, 6_000, 0, false);
 }
 
 #[test]

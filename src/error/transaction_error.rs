@@ -6,4 +6,5 @@ pub enum TransactionError {
     AccountLocked,
     TransactionNotFound,
     DisputeError,
+    DuplicateTransaction,
 }

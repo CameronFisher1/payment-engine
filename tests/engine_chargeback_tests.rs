@@ -2,13 +2,14 @@ mod common;
 
 use common::assertions::{assert_account, assert_tx_dispute_state};
 use common::builders::{chargeback, deposit, dispute, resolve, withdrawal};
+use payment_engine::domain::amount::Amount;
 use payment_engine::domain::dispute::DisputeState;
 use payment_engine::engine::payment_engine::PaymentEngine;
 use payment_engine::error::transaction_error::TransactionError;
 use payment_engine::ledger::in_memory::InMemoryLedger;
 use payment_engine::traits::ledger::Ledger;
 
-fn total_for(ledger: &InMemoryLedger, client_id: u16) -> i32 {
+fn total_for(ledger: &InMemoryLedger, client_id: u16) -> Amount {
     let account = ledger.account(client_id).unwrap();
     account.available + account.held
 }

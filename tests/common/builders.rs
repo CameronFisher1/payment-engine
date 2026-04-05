@@ -11,7 +11,7 @@ use payment_engine::io::csv_input::CsvTransactionSource;
 use payment_engine::io::record::CsvTransactionRecord;
 use std::io::Cursor;
 
-pub fn amount(value: i32) -> Amount {
+pub fn amount(value: i64) -> Amount {
     value
 }
 
